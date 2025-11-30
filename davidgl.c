@@ -95,6 +95,12 @@ int should_update() {
 void screen_clear() {
     for (int i = 0; i < SCREEN_W * SCREEN_H; i++)
         back_buffer[i] = 0x00000000; 
+    //does 2 pixles at a time instead
+    uint64_t* ptr = (uint64_t*)back_buffer;
+    int count = (SCREEN_W * SCREEN_H) / 2;
+
+    while(count--) *ptr++ = 0;
+
 }
 
 void draw_pixel(int x, int y, uint32_t color) {
@@ -108,11 +114,16 @@ void flip() {
     uint8_t* fb = (uint8_t*)fb_addr;
     int row_bytes = SCREEN_W * 4;
 
-    for (int y = 0; y < SCREEN_H; y++) {
-        memorycpy(fb + y * pitch, &back_buffer[y * SCREEN_W], row_bytes);
+
+    if (pitch == row_bytes) {
+        memorycpy(fb, back_buffer, SCREEN_W * SCREEN_H * 4);
+    } else {
+
+        for (int y = 0; y < SCREEN_H; y++) {
+            memorycpy(fb + y * pitch, &back_buffer[y * SCREEN_W], row_bytes);
+        }
     }
 }
-
 
 void draw_rect(int x, int y, int w, int h, uint32_t color) {
     for (int row = 0; row < h; row++) {
@@ -206,3 +217,20 @@ void draw_line(int x0, int y0, int x1, int y1, uint32_t color) {
         if (e2 <= dx) { err += dx; y0 += sy; }
     }
 }
+
+
+void draw_sprite(int pos_x, int pos_y, Sprite sprite){
+    for (int y = 0; y < sprite.height; y++ ){
+        for (int x = 0; x < sprite.width; x++){
+            uint32_t color = sprite.pixles[y * sprite.width + x];
+
+            if (color == 0x000000FF)continue; 
+
+            draw_pixel(pos_x + x, pos_y + y, color);
+
+        }
+
+    }
+
+}
+
